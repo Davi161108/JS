@@ -1,0 +1,19 @@
+Se o seu professor exigir que o Card do produto seja um componente separado recebendo dados via Props, você deve isolar a renderização. Veja como é simples fazer essa divisão se ele cobrar:  JavaScript// 1. Crie o componente isolado (fora do App ou em outro arquivo) que recebe PROPS
+const CardProduto = ({ item, aoClicar }) => {
+  return (
+    <TouchableOpacity style={styles.card} onPress={() => aoClicar(item)}>
+      <Text style={styles.cardTitulo}>{item.propriedade1}</Text>
+      <Text>Cat: {item.propriedade2} | Qtd: {item.quantidade}</Text>
+      <Text style={styles.cardValor}>R$ {item.valor.toFixed(2)}</Text>
+    </TouchableOpacity>
+  );
+};
+
+// 2. Dentro da sua FlatList no App(), você o chama assim:
+<FlatList
+  data={listaItens}
+  keyExtractor={(item) => item.id}
+  renderItem={({ item }) => (
+    <CardProduto item={item} aoClicar={setItemSelecionado} />
+  )}
+/>
