@@ -1,0 +1,202 @@
+import React, { useState } from 'react';
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  TextInput, 
+  Button, 
+  FlatList, 
+  TouchableOpacity, 
+  Alert 
+} from 'react-native';
+
+export default function App() {
+  // ==========================================
+  // 1. ESTADOS (useState) - Memória do App
+  // ==========================================
+  // Cada campo do formulário precisa de um estado para capturar o texto digitado.
+  const [campo1, setCampo1] = useState(''); // Guarda o texto do primeiro input (ex: Nome)
+  const [campo2, setCampo2] = useState(''); // Guarda o texto do segundo input (ex: Categoria)
+  const [campoValor, setCampoValor] = useState(''); // Guarda o valor do preço (ainda em formato de texto)
+  const [campoQtd, setCampoQtd] = useState(''); // Guarda o valor do estoque (ainda em formato de texto)
+
+  // Estados estruturais da aplicação
+  const [listaItens, setListaItens] = useState([]); // Armazena o array/lista com todos os objetos cadastrados
+  const [itemSelecionado, setItemSelecionado] = useState(null); // Guarda o objeto que foi clicado, começa como 'null' (nada selecionado)
+
+  // ==========================================
+  // 2. FUNÇÕES DE MANIPULAÇÃO DE DADOS
+  // ==========================================
+
+  // [Prática 2 & 6] Função responsável por criar um objeto e inseri-lo na lista
+  const adicionarItem = () => {
+    // Validação simples: Se qualquer um dos campos estiver vazio, exibe alerta e interrompe a função (return)
+    if (!campo1 || !campo2 || !campoValor || !campoQtd) {
+      Alert.alert("Erro", "Preencha todos os campos antes de salvar!");
+      return;
+    }
+
+    // Criação do Molde/Objeto Neutro com os dados capturados do formulário
+    const novoItem = {
+      id: Date.now().toString(), // Date.now() gera um número gigante baseado nos milissegundos atuais. Usado para criar um ID único.
+      propriedade1: campo1,
+      propriedade2: campo2,
+      valor: parseFloat(campoValor), // IMPORTANTE: Transforma a String do input em número quebrado (Decimal/Float) para cálculos matemáticos.
+      quantidade: parseInt(campoQtd), // IMPORTANTE: Transforma a String do input em número inteiro para o estoque.
+    };
+
+    // Atualização de Estado usando o conceito de IMUTABILIDADE.
+    // O '[...listaItens]' copia tudo o que já existia na lista, e o ', novoItem' adiciona o novo objeto no final do array.
+    setListaItens([...listaItens, novoItem]);
+
+    // Executa a função abaixo para limpar os campos da tela automaticamente após o cadastro
+    limparFormulario();
+  };
+
+  // [Prática 3] Reseta todas as caixas de texto para strings vazias
+  const limparFormulario = () => {
+    setCampo1('');
+    setCampo2('');
+    setCampoValor('');
+    setCampoQtd('');
+  };
+
+  // [Prática 5] Remove o último registro inserido no array
+  const removerUltimoItem = () => {
+    // Se o tamanho da lista for zero, avisa o usuário e não faz nada
+    if (listaItens.length === 0) {
+      Alert.alert("Aviso", "Não há nenhum item para remover!");
+      return;
+    }
+    // O método '.slice(0, -1)' faz um recorte na lista: pega do índice 0 até o penúltimo item (deixando o último de fora).
+    // Depois atualizamos o estado da lista com essa nova cópia encolhida.
+    setListaItens(listaItens.slice(0, -1));
+  };
+
+  // ==========================================
+  // 3. LÓGICA E CÁLCULOS (Variáveis Derivadas)
+  // ==========================================
+
+  // [Prática 1] O total é simplesmente o tamanho atual do array de itens. Re-calculado a cada renderização.
+  const totalItens = listaItens.length;
+
+  // [Prática 4] Função que varre a lista para encontrar o objeto com a propriedade '.valor' mais alta
+  const obterItemMaisCaro = () => {
+    if (listaItens.length === 0) return null; // Se a lista estiver vazia, retorna nulo.
+    
+    // O '.reduce()' compara os itens em par. 
+    // Ele pergunta: 'O valor do item atual é maior que o valor do maior item que encontrei até agora? Se sim, o atual vira o maior. Se não, mantém o anterior.'
+    return listaItens.reduce((maior, atual) => atual.valor > maior.valor ? atual : maior, listaItens[0]);
+  };
+
+  // Guardamos o resultado da função acima nesta constante para usar no HTML (JSX) abaixo
+  const itemMaisCaro = obterItemMaisCaro();
+
+  // ==========================================
+  // 4. INTERFACE GRÁFICA (JSX)
+  // ==========================================
+  return (
+    <View style={styles.container}>
+      <Text style={styles.tituloApp}>Modelo Base Prática</Text>
+
+      {/* --- BLOCO DO FORMULÁRIO --- */}
+      <View style={styles.formulario}>
+        {/* 'value' vincula o input ao estado. 'onChangeText' atualiza o estado quando o usuário digita */}
+        <TextInput 
+          style={styles.input} 
+          placeholder="Nome / Item" 
+          value={campo1} 
+          onChangeText={setCampo1} 
+        />
+        <TextInput 
+          style={styles.input} 
+          placeholder="Categoria / Tipo" 
+          value={campo2} 
+          onChangeText={setCampo2} 
+        />
+        {/* 'keyboardType="numeric"' abre o teclado numérico no celular */}
+        <TextInput 
+          style={styles.input} 
+          placeholder="Preço (Ex: 10.50)" 
+          keyboardType="numeric"
+          value={campoValor} 
+          onChangeText={setCampoValor} 
+        />
+        <TextInput 
+          style={styles.input} 
+          placeholder="Quantidade Estoque" 
+          keyboardType="numeric"
+          value={campoQtd} 
+          onChangeText={setCampoQtd} 
+        />
+
+        <View style={styles.botoesContainer}>
+          <Button title="Cadastrar" onPress={adicionarItem} color="green" />
+          <Button title="Limpar" onPress={limparFormulario} color="gray" />
+        </View>
+      </View>
+
+      {/* --- BLOCO DE METRICAS/PAINEL --- */}
+      <View style={styles.painelMetricas}>
+        {/* Exibe dinamicamente o total de itens cadastrados */}
+        <Text style={styles.textoMetrica}>Total Cadastrado: {totalItens}</Text>
+        
+        {/* RENDERIZAÇÃO CONDICIONAL: O bloco só aparece na tela SE 'itemMaisCaro' não for nulo */}
+        {itemMaisCaro && (
+          // '.toFixed(2)' formata o número para exibir sempre duas casas decimais após a vírgula (padrão de moeda)
+          <Text style={styles.textoMetrica}>
+            Maior Valor: {itemMaisCaro.propriedade1} (R$ {itemMaisCaro.valor.toFixed(2)})
+          </Text>
+        )}
+      </View>
+
+      {/* --- [Prática 7] DETALHES DO ITEM SELECIONADO --- */}
+      {/* Se o usuário clicou em algum item da lista, o estado 'itemSelecionado' deixa de ser nulo e renderiza este painel de destaque */}
+      {itemSelecionado && (
+        <View style={styles.destaqueContainer}>
+          <Text style={styles.tituloDestaque}>Item Selecionado em Destaque:</Text>
+          <Text>Principal: {itemSelecionado.propriedade1}</Text>
+          <Text>Secundário: {itemSelecionado.propriedade2}</Text>
+          <Text>Valor: R$ {itemSelecionado.valor.toFixed(2)}</Text>
+          <Text>Estoque: {itemSelecionado.quantidade} unidades</Text>
+          {/* Ao clicar em fechar, voltamos o estado para 'null', fazendo o painel sumir da tela */}
+          <Button title="Fechar Detalhes" onPress={() => setItemSelecionado(null)} color="red" />
+        </View>
+      )}
+
+      {/* --- LISTAGEM DOS PRODUTOS (FlatList) --- */}
+      <FlatList
+        data={listaItens} // Passa o array de dados que criamos no useState
+        keyExtractor={(item) => item.id} // Diz ao React qual campo é a chave única de cada linha da lista
+        renderItem={({ item }) => (
+          // 'TouchableOpacity' é um botão invisível que gera efeito de opacidade ao clicar. 
+          // Usamos ele para capturar o clique no card inteiro e salvar o item clicado no estado.
+          <TouchableOpacity style={styles.card} onPress={() => setItemSelecionado(item)}>
+            <Text style={styles.cardTitulo}>{item.propriedade1}</Text>
+            <Text>Atributo: {item.propriedade2} | Estoque: {item.quantidade}</Text>
+            <Text style={styles.cardValor}>R$ {item.valor.toFixed(2)}</Text>
+          </TouchableOpacity>
+        )}
+      />
+
+      {/* Botão posicionado no final da tela para acionar a remoção */}
+      <Button title="Remover Último Item" onPress={removerUltimoItem} color="darkred" />
+    </View>
+  );
+}
+
+// Estilos css-in-js básicos apenas para estruturação visual na tela do Expo Go
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 40, backgroundColor: '#fff' },
+  tituloApp: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  formulario: { marginBottom: 20 },
+  input: { borderWidth: 1, borderColor: '#ccc', padding: 8, marginBottom: 10, borderRadius: 5 },
+  botoesContainer: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 5 },
+  painelMetricas: { backgroundColor: '#f0f0f0', padding: 10, borderRadius: 5, marginBottom: 15 },
+  textoMetrica: { fontSize: 14, fontWeight: '600' },
+  destaqueContainer: { backgroundColor: '#ffeebb', padding: 15, borderRadius: 5, marginBottom: 15, borderWidth: 1, borderColor: '#ffa500' },
+  tituloDestaque: { fontWeight: 'bold', marginBottom: 5 },
+  card: { padding: 15, backgroundColor: '#f9f9f9', borderWidth: 1, borderColor: '#ddd', borderRadius: 5, marginBottom: 10 },
+  cardTitulo: { fontSize: 16, fontWeight: 'bold' },
+  cardValor: { color: 'green', fontWeight: 'bold', marginTop: 5 }
+});
